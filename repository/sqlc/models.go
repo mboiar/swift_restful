@@ -12,10 +12,10 @@ type Bank struct {
 	ID            int32         `json:"id"`
 	Name          string        `json:"name"`
 	Address       string        `json:"address"`
-	Swiftcode     string        `json:"swiftcode"`
-	Countryiso2   string        `json:"countryiso2"`
-	Isheadquarter bool          `json:"isheadquarter"`
-	Headquarterid sql.NullInt32 `json:"headquarterid"`
+	SwiftCode     string        `json:"swift_code"`
+	CountryIso2   string        `json:"country_iso2"`
+	IsHeadquarter bool          `json:"is_headquarter"`
+	HeadquarterID sql.NullInt32 `json:"headquarter_id"`
 }
 
 type Country struct {

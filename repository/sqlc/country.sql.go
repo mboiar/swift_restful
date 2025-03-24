@@ -7,9 +7,10 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 )
 
-const createCountry = `-- name: CreateCountry :exec
+const createCountry = `-- name: CreateCountry :execresult
 INSERT IGNORE INTO country(
     ` + "`" + `ISO2` + "`" + `,
     name
@@ -23,9 +24,8 @@ type CreateCountryParams struct {
 	Name string `json:"name"`
 }
 
-func (q *Queries) CreateCountry(ctx context.Context, arg CreateCountryParams) error {
-	_, err := q.exec(ctx, q.createCountryStmt, createCountry, arg.Iso2, arg.Name)
-	return err
+func (q *Queries) CreateCountry(ctx context.Context, arg CreateCountryParams) (sql.Result, error) {
+	return q.exec(ctx, q.createCountryStmt, createCountry, arg.Iso2, arg.Name)
 }
 
 const getCountryByCountryISO2 = `-- name: GetCountryByCountryISO2 :one

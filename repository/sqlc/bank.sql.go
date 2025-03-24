@@ -14,9 +14,9 @@ const createBank = `-- name: CreateBank :execresult
 INSERT INTO bank(
     ` + "`" + `address` + "`" + `,
     ` + "`" + `name` + "`" + `,
-    ` + "`" + `countryISO2` + "`" + `,
-    ` + "`" + `isHeadquarter` + "`" + `,
-    ` + "`" + `swiftCode` + "`" + `
+    ` + "`" + `country_ISO2` + "`" + `,
+    ` + "`" + `is_headquarter` + "`" + `,
+    ` + "`" + `swift_code` + "`" + `
 ) VALUES (
     ?, ?, ?, ?, ?
 )
@@ -42,7 +42,7 @@ func (q *Queries) CreateBank(ctx context.Context, arg CreateBankParams) (sql.Res
 
 const deleteBank = `-- name: DeleteBank :exec
 DELETE FROM bank
-WHERE SwiftCode = ?
+WHERE swift_code = ?
 `
 
 func (q *Queries) DeleteBank(ctx context.Context, swiftcode string) error {
@@ -51,20 +51,20 @@ func (q *Queries) DeleteBank(ctx context.Context, swiftcode string) error {
 }
 
 const getBankBySwiftCode = `-- name: GetBankBySwiftCode :one
-SELECT bank.id, bank.name, bank.address, bank.swiftcode, bank.countryiso2, bank.isheadquarter, bank.headquarterid, country.name FROM bank
+SELECT bank.id, bank.name, bank.address, bank.swift_code, bank.country_iso2, bank.is_headquarter, bank.headquarter_id, country.name FROM bank
 INNER JOIN country
-ON bank.` + "`" + `countryISO2` + "`" + ` = country.` + "`" + `ISO2` + "`" + `
-WHERE SwiftCode = ? LIMIT 1
+ON bank.` + "`" + `country_ISO2` + "`" + ` = country.` + "`" + `ISO2` + "`" + `
+WHERE swift_code = ? LIMIT 1
 `
 
 type GetBankBySwiftCodeRow struct {
 	ID            int32         `json:"id"`
 	Name          string        `json:"name"`
 	Address       string        `json:"address"`
-	Swiftcode     string        `json:"swiftcode"`
-	Countryiso2   string        `json:"countryiso2"`
-	Isheadquarter bool          `json:"isheadquarter"`
-	Headquarterid sql.NullInt32 `json:"headquarterid"`
+	SwiftCode     string        `json:"swift_code"`
+	CountryIso2   string        `json:"country_iso2"`
+	IsHeadquarter bool          `json:"is_headquarter"`
+	HeadquarterID sql.NullInt32 `json:"headquarter_id"`
 	Name_2        string        `json:"name_2"`
 }
 
@@ -75,27 +75,27 @@ func (q *Queries) GetBankBySwiftCode(ctx context.Context, swiftcode string) (Get
 		&i.ID,
 		&i.Name,
 		&i.Address,
-		&i.Swiftcode,
-		&i.Countryiso2,
-		&i.Isheadquarter,
-		&i.Headquarterid,
+		&i.SwiftCode,
+		&i.CountryIso2,
+		&i.IsHeadquarter,
+		&i.HeadquarterID,
 		&i.Name_2,
 	)
 	return i, err
 }
 
 const getBranchesByCountryISO2 = `-- name: GetBranchesByCountryISO2 :many
-SELECT id, name, address, swiftcode, countryiso2, isheadquarter, headquarterid FROM bank
-WHERE ` + "`" + `countryISO2` + "`" + ` = ? LIMIT ?
+SELECT id, name, address, swift_code, country_iso2, is_headquarter, headquarter_id FROM bank
+WHERE ` + "`" + `country_ISO2` + "`" + ` = ? LIMIT ?
 `
 
 type GetBranchesByCountryISO2Params struct {
-	Countryiso2 string `json:"countryiso2"`
+	CountryIso2 string `json:"country_iso2"`
 	Limit       int32  `json:"limit"`
 }
 
 func (q *Queries) GetBranchesByCountryISO2(ctx context.Context, arg GetBranchesByCountryISO2Params) ([]Bank, error) {
-	rows, err := q.query(ctx, q.getBranchesByCountryISO2Stmt, getBranchesByCountryISO2, arg.Countryiso2, arg.Limit)
+	rows, err := q.query(ctx, q.getBranchesByCountryISO2Stmt, getBranchesByCountryISO2, arg.CountryIso2, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -107,10 +107,10 @@ func (q *Queries) GetBranchesByCountryISO2(ctx context.Context, arg GetBranchesB
 			&i.ID,
 			&i.Name,
 			&i.Address,
-			&i.Swiftcode,
-			&i.Countryiso2,
-			&i.Isheadquarter,
-			&i.Headquarterid,
+			&i.SwiftCode,
+			&i.CountryIso2,
+			&i.IsHeadquarter,
+			&i.HeadquarterID,
 		); err != nil {
 			return nil, err
 		}
@@ -126,17 +126,17 @@ func (q *Queries) GetBranchesByCountryISO2(ctx context.Context, arg GetBranchesB
 }
 
 const getBranchesByHeadquarterId = `-- name: GetBranchesByHeadquarterId :many
-SELECT id, name, address, swiftcode, countryiso2, isheadquarter, headquarterid from bank
-WHERE ` + "`" + `headquarterId` + "`" + ` = ? LIMIT ?
+SELECT id, name, address, swift_code, country_iso2, is_headquarter, headquarter_id from bank
+WHERE ` + "`" + `headquarter_id` + "`" + ` = ? LIMIT ?
 `
 
 type GetBranchesByHeadquarterIdParams struct {
-	Headquarterid sql.NullInt32 `json:"headquarterid"`
+	HeadquarterID sql.NullInt32 `json:"headquarter_id"`
 	Limit         int32         `json:"limit"`
 }
 
 func (q *Queries) GetBranchesByHeadquarterId(ctx context.Context, arg GetBranchesByHeadquarterIdParams) ([]Bank, error) {
-	rows, err := q.query(ctx, q.getBranchesByHeadquarterIdStmt, getBranchesByHeadquarterId, arg.Headquarterid, arg.Limit)
+	rows, err := q.query(ctx, q.getBranchesByHeadquarterIdStmt, getBranchesByHeadquarterId, arg.HeadquarterID, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -148,10 +148,10 @@ func (q *Queries) GetBranchesByHeadquarterId(ctx context.Context, arg GetBranche
 			&i.ID,
 			&i.Name,
 			&i.Address,
-			&i.Swiftcode,
-			&i.Countryiso2,
-			&i.Isheadquarter,
-			&i.Headquarterid,
+			&i.SwiftCode,
+			&i.CountryIso2,
+			&i.IsHeadquarter,
+			&i.HeadquarterID,
 		); err != nil {
 			return nil, err
 		}
@@ -169,10 +169,10 @@ func (q *Queries) GetBranchesByHeadquarterId(ctx context.Context, arg GetBranche
 const setBranchHeadquarter = `-- name: SetBranchHeadquarter :execresult
 UPDATE bank AS branch
 INNER JOIN bank AS headquarter
-ON LEFT(bank.swiftCode, 8) = LEFT(headquarter.swiftCode, 8)
+ON LEFT(bank.swift_code, 8) = LEFT(headquarter.swift_code, 8)
 SET
-branch.headquarterId = headquarter.id
-WHERE headquarter.isHeadquarter AND branch.id = ?
+branch.headquarter_id = headquarter.id
+WHERE headquarter.is_headquarter AND branch.id = ?
 `
 
 func (q *Queries) SetBranchHeadquarter(ctx context.Context, id int32) (sql.Result, error) {
@@ -182,8 +182,8 @@ func (q *Queries) SetBranchHeadquarter(ctx context.Context, id int32) (sql.Resul
 const updateBranchesHeadquarter = `-- name: UpdateBranchesHeadquarter :exec
 UPDATE bank
 SET
-` + "`" + `headquarterId` + "`" + ` = ?
-WHERE LEFT(` + "`" + `SwiftCode` + "`" + `, 8) = LEFT(?, 8) AND NOT ` + "`" + `isHeadquarter` + "`" + `
+` + "`" + `headquarter_id` + "`" + ` = ?
+WHERE LEFT(` + "`" + `swift_code` + "`" + `, 8) = LEFT(?, 8) AND NOT ` + "`" + `is_headquarter` + "`" + `
 `
 
 type UpdateBranchesHeadquarterParams struct {

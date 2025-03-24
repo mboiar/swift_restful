@@ -27,7 +27,7 @@ func CreateBankUpdateRelations(ctx context.Context, db *sql.DB, queries *reposit
 	if err != nil {
 		return err
 	}
-	if err = qtx.CreateCountry(ctx, params.countryParams); err != nil {
+	if _, err = qtx.CreateCountry(ctx, params.countryParams); err != nil {
 		return err
 	}
 	if params.bankParams.IsHeadquarter {
