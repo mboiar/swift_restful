@@ -9,6 +9,17 @@ INSERT INTO bank(
     sqlc.arg('address'), sqlc.arg('bankName'), sqlc.arg('countryISO2'), sqlc.arg('isHeadquarter'), sqlc.arg('swiftCode')
 );
 
+-- name: CreateBankBulk :copyfrom
+INSERT INTO bank(
+    `address`,
+    `name`,
+    `country_ISO2`,
+    `is_headquarter`,
+    `swift_code`
+) VALUES (
+    ?, ?, ?, ?, ?
+);
+
 -- name: SetBranchHeadquarter :execresult
 UPDATE bank AS branch
 INNER JOIN bank AS headquarter

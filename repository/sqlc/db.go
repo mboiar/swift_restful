@@ -27,6 +27,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.createBankStmt, err = db.PrepareContext(ctx, createBank); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateBank: %w", err)
 	}
+	if q.createBankBulkStmt, err = db.PrepareContext(ctx, createBankBulk); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateBankBulk: %w", err)
+	}
 	if q.createCountryStmt, err = db.PrepareContext(ctx, createCountry); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateCountry: %w", err)
 	}
@@ -59,6 +62,11 @@ func (q *Queries) Close() error {
 	if q.createBankStmt != nil {
 		if cerr := q.createBankStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing createBankStmt: %w", cerr)
+		}
+	}
+	if q.createBankBulkStmt != nil {
+		if cerr := q.createBankBulkStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createBankBulkStmt: %w", cerr)
 		}
 	}
 	if q.createCountryStmt != nil {
@@ -141,6 +149,7 @@ type Queries struct {
 	db                             DBTX
 	tx                             *sql.Tx
 	createBankStmt                 *sql.Stmt
+	createBankBulkStmt             *sql.Stmt
 	createCountryStmt              *sql.Stmt
 	deleteBankStmt                 *sql.Stmt
 	getBankBySwiftCodeStmt         *sql.Stmt
@@ -156,6 +165,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		db:                             tx,
 		tx:                             tx,
 		createBankStmt:                 q.createBankStmt,
+		createBankBulkStmt:             q.createBankBulkStmt,
 		createCountryStmt:              q.createCountryStmt,
 		deleteBankStmt:                 q.deleteBankStmt,
 		getBankBySwiftCodeStmt:         q.getBankBySwiftCodeStmt,

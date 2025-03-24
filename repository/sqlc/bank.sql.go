@@ -40,6 +40,26 @@ func (q *Queries) CreateBank(ctx context.Context, arg CreateBankParams) (sql.Res
 	)
 }
 
+const createBankBulk = `-- name: CreateBankBulk :copyfrom
+INSERT INTO bank(
+    ` + "`" + `address` + "`" + `,
+    ` + "`" + `name` + "`" + `,
+    ` + "`" + `country_ISO2` + "`" + `,
+    ` + "`" + `is_headquarter` + "`" + `,
+    ` + "`" + `swift_code` + "`" + `
+) VALUES (
+    ?, ?, ?, ?, ?
+)
+`
+
+type CreateBankBulkParams struct {
+	Address       string `json:"address"`
+	Name          string `json:"name"`
+	CountryIso2   string `json:"country_iso2"`
+	IsHeadquarter bool   `json:"is_headquarter"`
+	SwiftCode     string `json:"swift_code"`
+}
+
 const deleteBank = `-- name: DeleteBank :exec
 DELETE FROM bank
 WHERE swift_code = ?
