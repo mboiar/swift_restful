@@ -1,0 +1,20 @@
+version: "2"
+cloud:
+    project: "Swift-restful"
+sql:
+- schema: "repository/migration/"
+  queries: "repository/query/"
+  engine: "mysql"
+  gen:
+    go:
+      package: "repository"
+      sql_package: "database/sql"
+      sql_driver: "github.com/go-sql-driver/mysql"
+      out: "repository/sqlc"
+      emit_json_tags: true
+      emit_prepared_queries: true
+      emit_interface: false
+      emit_exact_table_names: false
+      emit_empty_slices: false
+  database:
+    uri: mysql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
