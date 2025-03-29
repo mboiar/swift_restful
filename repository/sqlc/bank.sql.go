@@ -189,7 +189,7 @@ func (q *Queries) GetBranchesByHeadquarterId(ctx context.Context, arg GetBranche
 const setBranchHeadquarter = `-- name: SetBranchHeadquarter :execresult
 UPDATE bank AS branch
 INNER JOIN bank AS headquarter
-ON LEFT(bank.swift_code, 8) = LEFT(headquarter.swift_code, 8)
+ON LEFT(branch.swift_code, 8) = LEFT(headquarter.swift_code, 8)
 SET
 branch.headquarter_id = headquarter.id
 WHERE headquarter.is_headquarter AND branch.id = ?
