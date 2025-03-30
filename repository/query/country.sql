@@ -2,6 +2,12 @@
 INSERT IGNORE INTO country(
     `ISO2`,
     name
+) VALUES (:values);
+
+-- name: CreateCountryBulk :copyfrom
+INSERT IGNORE INTO country(
+    `ISO2`,
+    name
 ) VALUES (
     ?, ?
 );

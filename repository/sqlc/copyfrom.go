@@ -18,12 +18,11 @@ import (
 var readerHandlerSequenceForCreateBankBulk uint32 = 1
 
 func convertRowsForCreateBankBulk(w *io.PipeWriter, arg []CreateBankBulkParams) {
-	e := mysqltsv.NewEncoder(w, 5, nil)
+	e := mysqltsv.NewEncoder(w, 4, nil)
 	for _, row := range arg {
 		e.AppendString(row.Address)
 		e.AppendString(row.Name)
 		e.AppendString(row.CountryIso2)
-		e.AppendValue(row.IsHeadquarter)
 		e.AppendString(row.SwiftCode)
 	}
 	w.CloseWithError(e.Close())
@@ -46,7 +45,42 @@ func (q *Queries) CreateBankBulk(ctx context.Context, arg []CreateBankBulkParams
 	go convertRowsForCreateBankBulk(pw, arg)
 	// The string interpolation is necessary because LOAD DATA INFILE requires
 	// the file name to be given as a literal string.
-	result, err := q.db.ExecContext(ctx, fmt.Sprintf("LOAD DATA LOCAL INFILE '%s' INTO TABLE `bank` %s (address, name, country_iso2, is_headquarter, swift_code)", "Reader::"+rh, mysqltsv.Escaping))
+	result, err := q.db.ExecContext(ctx, fmt.Sprintf("LOAD DATA LOCAL INFILE '%s' INTO TABLE `bank` %s (address, name, country_iso2, swift_code)", "Reader::"+rh, mysqltsv.Escaping))
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+var readerHandlerSequenceForCreateCountryBulk uint32 = 1
+
+func convertRowsForCreateCountryBulk(w *io.PipeWriter, arg []CreateCountryBulkParams) {
+	e := mysqltsv.NewEncoder(w, 2, nil)
+	for _, row := range arg {
+		e.AppendString(row.Iso2)
+		e.AppendString(row.Name)
+	}
+	w.CloseWithError(e.Close())
+}
+
+// CreateCountryBulk uses MySQL's LOAD DATA LOCAL INFILE and is not atomic.
+//
+// Errors and duplicate keys are treated as warnings and insertion will
+// continue, even without an error for some cases.  Use this in a transaction
+// and use SHOW WARNINGS to check for any problems and roll back if you want to.
+//
+// Check the documentation for more information:
+// https://dev.mysql.com/doc/refman/8.0/en/load-data.html#load-data-error-handling
+func (q *Queries) CreateCountryBulk(ctx context.Context, arg []CreateCountryBulkParams) (int64, error) {
+	pr, pw := io.Pipe()
+	defer pr.Close()
+	rh := fmt.Sprintf("CreateCountryBulk_%d", atomic.AddUint32(&readerHandlerSequenceForCreateCountryBulk, 1))
+	mysql.RegisterReaderHandler(rh, func() io.Reader { return pr })
+	defer mysql.DeregisterReaderHandler(rh)
+	go convertRowsForCreateCountryBulk(pw, arg)
+	// The string interpolation is necessary because LOAD DATA INFILE requires
+	// the file name to be given as a literal string.
+	result, err := q.db.ExecContext(ctx, fmt.Sprintf("LOAD DATA LOCAL INFILE '%s' INTO TABLE `country` %s (iso2, name)", "Reader::"+rh, mysqltsv.Escaping))
 	if err != nil {
 		return 0, err
 	}

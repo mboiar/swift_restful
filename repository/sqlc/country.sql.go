@@ -28,6 +28,20 @@ func (q *Queries) CreateCountry(ctx context.Context, arg CreateCountryParams) (s
 	return q.exec(ctx, q.createCountryStmt, createCountry, arg.Iso2, arg.Name)
 }
 
+const createCountryBulk = `-- name: CreateCountryBulk :copyfrom
+INSERT IGNORE INTO country(
+    ` + "`" + `ISO2` + "`" + `,
+    name
+) VALUES (
+    ?, ?
+)
+`
+
+type CreateCountryBulkParams struct {
+	Iso2 string `json:"iso2"`
+	Name string `json:"name"`
+}
+
 const getCountryByCountryISO2 = `-- name: GetCountryByCountryISO2 :one
 SELECT iso2, name FROM country
 WHERE ` + "`" + `ISO2` + "`" + ` = ? LIMIT 1

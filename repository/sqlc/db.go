@@ -33,6 +33,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.createCountryStmt, err = db.PrepareContext(ctx, createCountry); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateCountry: %w", err)
 	}
+	if q.createCountryBulkStmt, err = db.PrepareContext(ctx, createCountryBulk); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateCountryBulk: %w", err)
+	}
 	if q.deleteBankStmt, err = db.PrepareContext(ctx, deleteBank); err != nil {
 		return nil, fmt.Errorf("error preparing query DeleteBank: %w", err)
 	}
@@ -42,17 +45,11 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getBranchesByCountryISO2Stmt, err = db.PrepareContext(ctx, getBranchesByCountryISO2); err != nil {
 		return nil, fmt.Errorf("error preparing query GetBranchesByCountryISO2: %w", err)
 	}
-	if q.getBranchesByHeadquarterIdStmt, err = db.PrepareContext(ctx, getBranchesByHeadquarterId); err != nil {
-		return nil, fmt.Errorf("error preparing query GetBranchesByHeadquarterId: %w", err)
+	if q.getBranchesBySwiftCodeStmt, err = db.PrepareContext(ctx, getBranchesBySwiftCode); err != nil {
+		return nil, fmt.Errorf("error preparing query GetBranchesBySwiftCode: %w", err)
 	}
 	if q.getCountryByCountryISO2Stmt, err = db.PrepareContext(ctx, getCountryByCountryISO2); err != nil {
 		return nil, fmt.Errorf("error preparing query GetCountryByCountryISO2: %w", err)
-	}
-	if q.setBranchHeadquarterStmt, err = db.PrepareContext(ctx, setBranchHeadquarter); err != nil {
-		return nil, fmt.Errorf("error preparing query SetBranchHeadquarter: %w", err)
-	}
-	if q.updateBranchesHeadquarterStmt, err = db.PrepareContext(ctx, updateBranchesHeadquarter); err != nil {
-		return nil, fmt.Errorf("error preparing query UpdateBranchesHeadquarter: %w", err)
 	}
 	return &q, nil
 }
@@ -74,6 +71,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing createCountryStmt: %w", cerr)
 		}
 	}
+	if q.createCountryBulkStmt != nil {
+		if cerr := q.createCountryBulkStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createCountryBulkStmt: %w", cerr)
+		}
+	}
 	if q.deleteBankStmt != nil {
 		if cerr := q.deleteBankStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing deleteBankStmt: %w", cerr)
@@ -89,24 +91,14 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getBranchesByCountryISO2Stmt: %w", cerr)
 		}
 	}
-	if q.getBranchesByHeadquarterIdStmt != nil {
-		if cerr := q.getBranchesByHeadquarterIdStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing getBranchesByHeadquarterIdStmt: %w", cerr)
+	if q.getBranchesBySwiftCodeStmt != nil {
+		if cerr := q.getBranchesBySwiftCodeStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getBranchesBySwiftCodeStmt: %w", cerr)
 		}
 	}
 	if q.getCountryByCountryISO2Stmt != nil {
 		if cerr := q.getCountryByCountryISO2Stmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getCountryByCountryISO2Stmt: %w", cerr)
-		}
-	}
-	if q.setBranchHeadquarterStmt != nil {
-		if cerr := q.setBranchHeadquarterStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing setBranchHeadquarterStmt: %w", cerr)
-		}
-	}
-	if q.updateBranchesHeadquarterStmt != nil {
-		if cerr := q.updateBranchesHeadquarterStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing updateBranchesHeadquarterStmt: %w", cerr)
 		}
 	}
 	return err
@@ -146,33 +138,31 @@ func (q *Queries) queryRow(ctx context.Context, stmt *sql.Stmt, query string, ar
 }
 
 type Queries struct {
-	db                             DBTX
-	tx                             *sql.Tx
-	createBankStmt                 *sql.Stmt
-	createBankBulkStmt             *sql.Stmt
-	createCountryStmt              *sql.Stmt
-	deleteBankStmt                 *sql.Stmt
-	getBankBySwiftCodeStmt         *sql.Stmt
-	getBranchesByCountryISO2Stmt   *sql.Stmt
-	getBranchesByHeadquarterIdStmt *sql.Stmt
-	getCountryByCountryISO2Stmt    *sql.Stmt
-	setBranchHeadquarterStmt       *sql.Stmt
-	updateBranchesHeadquarterStmt  *sql.Stmt
+	db                           DBTX
+	tx                           *sql.Tx
+	createBankStmt               *sql.Stmt
+	createBankBulkStmt           *sql.Stmt
+	createCountryStmt            *sql.Stmt
+	createCountryBulkStmt        *sql.Stmt
+	deleteBankStmt               *sql.Stmt
+	getBankBySwiftCodeStmt       *sql.Stmt
+	getBranchesByCountryISO2Stmt *sql.Stmt
+	getBranchesBySwiftCodeStmt   *sql.Stmt
+	getCountryByCountryISO2Stmt  *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	return &Queries{
-		db:                             tx,
-		tx:                             tx,
-		createBankStmt:                 q.createBankStmt,
-		createBankBulkStmt:             q.createBankBulkStmt,
-		createCountryStmt:              q.createCountryStmt,
-		deleteBankStmt:                 q.deleteBankStmt,
-		getBankBySwiftCodeStmt:         q.getBankBySwiftCodeStmt,
-		getBranchesByCountryISO2Stmt:   q.getBranchesByCountryISO2Stmt,
-		getBranchesByHeadquarterIdStmt: q.getBranchesByHeadquarterIdStmt,
-		getCountryByCountryISO2Stmt:    q.getCountryByCountryISO2Stmt,
-		setBranchHeadquarterStmt:       q.setBranchHeadquarterStmt,
-		updateBranchesHeadquarterStmt:  q.updateBranchesHeadquarterStmt,
+		db:                           tx,
+		tx:                           tx,
+		createBankStmt:               q.createBankStmt,
+		createBankBulkStmt:           q.createBankBulkStmt,
+		createCountryStmt:            q.createCountryStmt,
+		createCountryBulkStmt:        q.createCountryBulkStmt,
+		deleteBankStmt:               q.deleteBankStmt,
+		getBankBySwiftCodeStmt:       q.getBankBySwiftCodeStmt,
+		getBranchesByCountryISO2Stmt: q.getBranchesByCountryISO2Stmt,
+		getBranchesBySwiftCodeStmt:   q.getBranchesBySwiftCodeStmt,
+		getCountryByCountryISO2Stmt:  q.getCountryByCountryISO2Stmt,
 	}
 }
