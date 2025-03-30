@@ -20,7 +20,7 @@ var readerHandlerSequenceForCreateBankBulk uint32 = 1
 func convertRowsForCreateBankBulk(w *io.PipeWriter, arg []CreateBankBulkParams) {
 	e := mysqltsv.NewEncoder(w, 4, nil)
 	for _, row := range arg {
-		e.AppendString(row.Address)
+		e.AppendValue(row.Address)
 		e.AppendString(row.Name)
 		e.AppendString(row.CountryIso2)
 		e.AppendString(row.SwiftCode)

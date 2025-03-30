@@ -14,9 +14,7 @@ const createCountry = `-- name: CreateCountry :execresult
 INSERT IGNORE INTO country(
     ` + "`" + `ISO2` + "`" + `,
     name
-) VALUES (
-    ?, ?
-)
+) VALUES (?, ?)
 `
 
 type CreateCountryParams struct {

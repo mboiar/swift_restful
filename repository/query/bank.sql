@@ -3,34 +3,18 @@ INSERT INTO bank(
     `address`,
     `name`,
     `country_ISO2`,
-    -- `is_headquarter`,
     `swift_code`
-) VALUES (:values);
+) VALUES (NULLIF(?, ''), ?, ?, ?);
 
 -- name: CreateBankBulk :copyfrom
 INSERT INTO bank(
     `address`,
     `name`,
     `country_ISO2`,
-    -- `is_headquarter`,
     `swift_code`
 ) VALUES (
     ?, ?, ?, ?
 );
-
--- -- name: SetBranchHeadquarter :execresult
--- UPDATE bank AS branch
--- INNER JOIN bank AS headquarter
--- ON LEFT(branch.swift_code, 8) = LEFT(headquarter.swift_code, 8)
--- SET
--- branch.headquarter_id = headquarter.id
--- WHERE headquarter.is_headquarter AND branch.id = ?;
-
--- -- name: UpdateBranchesHeadquarter :exec
--- UPDATE bank
--- SET
--- `headquarter_id` = sqlc.arg('headquarterId')
--- WHERE LEFT(`swift_code`, 8) = LEFT(sqlc.arg('swiftCode'), 8) AND NOT `is_headquarter`;
 
 -- name: DeleteBank :exec
 DELETE FROM bank
