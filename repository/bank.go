@@ -4,13 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"strings"
 	repository "swift-restful/repository/sqlc"
 )
 
 func InsertBankMultiRow(ctx context.Context, args []repository.CreateBankBulkParams, db *sql.DB, skipDuplicates bool) error {
-	placeholderArr := make([]string, len(args))
-	argsArr := make([]interface{}, len(args)*4)
+	nRows := len(args)
+	placeholderArr := make([]string, nRows)
+	argsArr := make([]interface{}, nRows*4)
 	for i, arg := range args {
 		placeholderArr[i] = "(?, ?, ?, ?)"
 		argsArr[i*4] = arg.Address
@@ -25,6 +27,19 @@ func InsertBankMultiRow(ctx context.Context, args []repository.CreateBankBulkPar
 		queryStr = "INSERT INTO bank (address, name, country_iso2, swift_code) VALUES %s"
 	}
 	rawQuery := fmt.Sprintf(queryStr, strings.Join(placeholderArr, ","))
-	_, err := db.ExecContext(ctx, rawQuery, argsArr...)
-	return err
+	res, err := db.ExecContext(ctx, rawQuery, argsArr...)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	rowsIgnored := nRows - int(rowsAffected)
+	slog.Info(fmt.Sprintf("Executed: insert values into bank table. %d rows affected", rowsAffected))
+	if rowsIgnored > 0 {
+		slog.Info(fmt.Sprintf("%d duplicate rows ignored", rowsIgnored))
+	}
+
+	return nil
 }

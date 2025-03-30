@@ -1,27 +1,40 @@
+//
+// Repository implements SWIFT database and routines for interacting with it.
+//
+
 package repository
 
 import (
 	"database/sql"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 
 	repository "swift-restful/repository/sqlc"
 
 	"github.com/go-sql-driver/mysql"
+	"github.com/joho/godotenv"
 )
 
-const (
-	MYSQL_ER_DUP_ENTRY = 1062
-)
-
-func SetupDB() (*sql.DB, *repository.Queries, error) {
+// SetupDB returns database and sqlc Queries instance configured based on provided .env file.
+// If provided, configuration file should define DB_USER, DB_PASSWORD, DB_NAME, DB_HOST and DB_PORT environment variables.
+func SetupDB(dbcfg_path string) (*sql.DB, *repository.Queries, error) {
+	if dbcfg_path != "" {
+		err := godotenv.Load(dbcfg_path)
+		if err != nil {
+			slog.Error("error loading config " + dbcfg_path)
+			return nil, nil, err
+		}
+	}
 	user := os.Getenv("DB_USER")
 	passwd := os.Getenv("DB_PASSWORD")
-	addr := os.Getenv("DB_HOST") + ":" + os.Getenv("DB_PORT")
+	host := os.Getenv("DB_HOST")
+	port := os.Getenv("DB_PORT")
+	addr := host + ":" + port
 	dbname := os.Getenv("DB_NAME")
-	if dbname == "" || addr == "" {
-		return nil, nil, fmt.Errorf("DB name (%s) and address (%s) can not be empty", dbname, addr)
+	if dbname == "" || host == "" || port == "" {
+		return nil, nil, fmt.Errorf("DB_NAME (%s), DB_HOST (%s) and DB_PORT (%s) can not be empty: make sure appropriate environment variables are set", dbname, host, port)
 	}
 	cfg := mysql.Config{
 		User:   user,
