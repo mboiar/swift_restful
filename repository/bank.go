@@ -12,19 +12,20 @@ import (
 func InsertBankMultiRow(ctx context.Context, args []repository.CreateBankBulkParams, db *sql.DB, skipDuplicates bool) error {
 	nRows := len(args)
 	placeholderArr := make([]string, nRows)
-	argsArr := make([]interface{}, nRows*4)
+	argsArr := make([]interface{}, nRows*5)
 	for i, arg := range args {
-		placeholderArr[i] = "(?, ?, ?, ?)"
-		argsArr[i*4] = arg.Address
-		argsArr[i*4+1] = arg.Name
-		argsArr[i*4+2] = arg.CountryIso2
-		argsArr[i*4+3] = arg.SwiftCode
+		placeholderArr[i] = "(?, ?, ?, ?, ?)"
+		argsArr[i*5] = arg.Address
+		argsArr[i*5+1] = arg.Name
+		argsArr[i*5+2] = arg.CountryIso2
+		argsArr[i*5+3] = arg.IsHeadquarter
+		argsArr[i*5+4] = arg.SwiftCode
 	}
 	var queryStr string
 	if skipDuplicates {
-		queryStr = "INSERT IGNORE INTO bank (address, name, country_iso2, swift_code) VALUES %s"
+		queryStr = "INSERT IGNORE INTO bank (address, name, country_iso2, is_headquarter, swift_code) VALUES %s"
 	} else {
-		queryStr = "INSERT INTO bank (address, name, country_iso2, swift_code) VALUES %s"
+		queryStr = "INSERT INTO bank (address, name, country_iso2, is_headquarter, swift_code) VALUES %s"
 	}
 	rawQuery := fmt.Sprintf(queryStr, strings.Join(placeholderArr, ","))
 	res, err := db.ExecContext(ctx, rawQuery, argsArr...)

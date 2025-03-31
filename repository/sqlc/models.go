@@ -9,11 +9,12 @@ import (
 )
 
 type Bank struct {
-	ID          int32          `json:"id"`
-	Name        string         `json:"name"`
-	Address     sql.NullString `json:"address"`
-	SwiftCode   string         `json:"swift_code"`
-	CountryIso2 string         `json:"country_iso2"`
+	ID            int32          `json:"id"`
+	Name          string         `json:"name"`
+	Address       sql.NullString `json:"address"`
+	IsHeadquarter bool           `json:"is_headquarter"`
+	SwiftCode     string         `json:"swift_code"`
+	CountryIso2   string         `json:"country_iso2"`
 }
 
 type Country struct {

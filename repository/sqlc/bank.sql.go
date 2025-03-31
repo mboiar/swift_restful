@@ -15,22 +15,25 @@ INSERT INTO bank(
     ` + "`" + `address` + "`" + `,
     ` + "`" + `name` + "`" + `,
     ` + "`" + `country_ISO2` + "`" + `,
+    ` + "`" + `is_headquarter` + "`" + `,
     ` + "`" + `swift_code` + "`" + `
-) VALUES (NULLIF(?, ''), ?, ?, ?)
+) VALUES (?, ?, ?, ?, ?)
 `
 
 type CreateBankParams struct {
-	NULLIF      interface{} `json:"NULLIF"`
-	Name        string      `json:"name"`
-	CountryIso2 string      `json:"country_iso2"`
-	SwiftCode   string      `json:"swift_code"`
+	Address       sql.NullString `json:"address"`
+	Name          string         `json:"name"`
+	CountryIso2   string         `json:"country_iso2"`
+	IsHeadquarter bool           `json:"is_headquarter"`
+	SwiftCode     string         `json:"swift_code"`
 }
 
 func (q *Queries) CreateBank(ctx context.Context, arg CreateBankParams) (sql.Result, error) {
 	return q.exec(ctx, q.createBankStmt, createBank,
-		arg.NULLIF,
+		arg.Address,
 		arg.Name,
 		arg.CountryIso2,
+		arg.IsHeadquarter,
 		arg.SwiftCode,
 	)
 }
@@ -40,17 +43,19 @@ INSERT INTO bank(
     ` + "`" + `address` + "`" + `,
     ` + "`" + `name` + "`" + `,
     ` + "`" + `country_ISO2` + "`" + `,
+    ` + "`" + `is_headquarter` + "`" + `,
     ` + "`" + `swift_code` + "`" + `
 ) VALUES (
-    ?, ?, ?, ?
+    ?, ?, ?, ?, ?
 )
 `
 
 type CreateBankBulkParams struct {
-	Address     sql.NullString `json:"address"`
-	Name        string         `json:"name"`
-	CountryIso2 string         `json:"country_iso2"`
-	SwiftCode   string         `json:"swift_code"`
+	Address       sql.NullString `json:"address"`
+	Name          string         `json:"name"`
+	CountryIso2   string         `json:"country_iso2"`
+	IsHeadquarter bool           `json:"is_headquarter"`
+	SwiftCode     string         `json:"swift_code"`
 }
 
 const deleteBank = `-- name: DeleteBank :exec
@@ -64,19 +69,20 @@ func (q *Queries) DeleteBank(ctx context.Context, swiftCode string) error {
 }
 
 const getBankBySwiftCode = `-- name: GetBankBySwiftCode :one
-SELECT bank.id, bank.name, bank.address, bank.swift_code, bank.country_iso2, country.name FROM bank
+SELECT bank.id, bank.name, bank.address, bank.is_headquarter, bank.swift_code, bank.country_iso2, country.name FROM bank
 INNER JOIN country
 ON bank.` + "`" + `country_ISO2` + "`" + ` = country.` + "`" + `ISO2` + "`" + `
 WHERE swift_code = ? LIMIT 1
 `
 
 type GetBankBySwiftCodeRow struct {
-	ID          int32          `json:"id"`
-	Name        string         `json:"name"`
-	Address     sql.NullString `json:"address"`
-	SwiftCode   string         `json:"swift_code"`
-	CountryIso2 string         `json:"country_iso2"`
-	Name_2      string         `json:"name_2"`
+	ID            int32          `json:"id"`
+	Name          string         `json:"name"`
+	Address       sql.NullString `json:"address"`
+	IsHeadquarter bool           `json:"is_headquarter"`
+	SwiftCode     string         `json:"swift_code"`
+	CountryIso2   string         `json:"country_iso2"`
+	Name_2        string         `json:"name_2"`
 }
 
 func (q *Queries) GetBankBySwiftCode(ctx context.Context, swiftCode string) (GetBankBySwiftCodeRow, error) {
@@ -86,6 +92,7 @@ func (q *Queries) GetBankBySwiftCode(ctx context.Context, swiftCode string) (Get
 		&i.ID,
 		&i.Name,
 		&i.Address,
+		&i.IsHeadquarter,
 		&i.SwiftCode,
 		&i.CountryIso2,
 		&i.Name_2,
@@ -94,7 +101,7 @@ func (q *Queries) GetBankBySwiftCode(ctx context.Context, swiftCode string) (Get
 }
 
 const getBranchesByCountryISO2 = `-- name: GetBranchesByCountryISO2 :many
-SELECT id, name, address, swift_code, country_iso2 FROM bank
+SELECT id, name, address, is_headquarter, swift_code, country_iso2 FROM bank
 WHERE ` + "`" + `country_ISO2` + "`" + ` = ? LIMIT ?
 `
 
@@ -116,6 +123,7 @@ func (q *Queries) GetBranchesByCountryISO2(ctx context.Context, arg GetBranchesB
 			&i.ID,
 			&i.Name,
 			&i.Address,
+			&i.IsHeadquarter,
 			&i.SwiftCode,
 			&i.CountryIso2,
 		); err != nil {
@@ -133,7 +141,7 @@ func (q *Queries) GetBranchesByCountryISO2(ctx context.Context, arg GetBranchesB
 }
 
 const getBranchesBySwiftCode = `-- name: GetBranchesBySwiftCode :many
-SELECT id, name, address, swift_code, country_iso2 from bank
+SELECT id, name, address, is_headquarter, swift_code, country_iso2 from bank
 WHERE LEFT(bank.swift_code, 8) = LEFT(?, 8) LIMIT ?
 `
 
@@ -155,6 +163,7 @@ func (q *Queries) GetBranchesBySwiftCode(ctx context.Context, arg GetBranchesByS
 			&i.ID,
 			&i.Name,
 			&i.Address,
+			&i.IsHeadquarter,
 			&i.SwiftCode,
 			&i.CountryIso2,
 		); err != nil {

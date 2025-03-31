@@ -3,17 +3,19 @@ INSERT INTO bank(
     `address`,
     `name`,
     `country_ISO2`,
+    `is_headquarter`,
     `swift_code`
-) VALUES (NULLIF(?, ''), ?, ?, ?);
+) VALUES (?, ?, ?, ?, ?);
 
 -- name: CreateBankBulk :copyfrom
 INSERT INTO bank(
     `address`,
     `name`,
     `country_ISO2`,
+    `is_headquarter`,
     `swift_code`
 ) VALUES (
-    ?, ?, ?, ?
+    ?, ?, ?, ?, ?
 );
 
 -- name: DeleteBank :exec

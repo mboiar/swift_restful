@@ -6,17 +6,24 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func main() {
-	// Initialize Gin router
-	router := gin.Default()
+func setupRouter() *gin.Engine {
+	r := gin.Default()
+	r.SetTrustedProxies(nil)
 
-	// Define routes
-	router.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "Ok",
-		})
+	// Ping test
+	r.GET("/health", func(c *gin.Context) {
+		c.String(http.StatusOK, "ok")
 	})
+	return r
+}
 
-	// Start the server
-	router.Run(":8000")
+func main() {
+	// db, queries, err := repository.SetupDB()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// 	os.Exit(1)
+	// }
+	r := setupRouter()
+
+	r.Run(":8000")
 }
