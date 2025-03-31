@@ -101,24 +101,31 @@ func (q *Queries) GetBankBySwiftCode(ctx context.Context, swiftCode string) (Get
 }
 
 const getBranchesByCountryISO2 = `-- name: GetBranchesByCountryISO2 :many
-SELECT id, name, address, is_headquarter, swift_code, country_iso2 FROM bank
-WHERE ` + "`" + `country_ISO2` + "`" + ` = ? LIMIT ?
+SELECT bank.id, bank.name, bank.address, bank.is_headquarter, bank.swift_code, bank.country_iso2, country.name as country_name FROM bank
+INNER JOIN country
+ON bank.` + "`" + `country_ISO2` + "`" + ` = country.` + "`" + `ISO2` + "`" + `
+WHERE ` + "`" + `country_ISO2` + "`" + ` = ?
 `
 
-type GetBranchesByCountryISO2Params struct {
-	CountryIso2 string `json:"country_iso2"`
-	Limit       int32  `json:"limit"`
+type GetBranchesByCountryISO2Row struct {
+	ID            int32          `json:"id"`
+	Name          string         `json:"name"`
+	Address       sql.NullString `json:"address"`
+	IsHeadquarter bool           `json:"is_headquarter"`
+	SwiftCode     string         `json:"swift_code"`
+	CountryIso2   string         `json:"country_iso2"`
+	CountryName   string         `json:"country_name"`
 }
 
-func (q *Queries) GetBranchesByCountryISO2(ctx context.Context, arg GetBranchesByCountryISO2Params) ([]Bank, error) {
-	rows, err := q.query(ctx, q.getBranchesByCountryISO2Stmt, getBranchesByCountryISO2, arg.CountryIso2, arg.Limit)
+func (q *Queries) GetBranchesByCountryISO2(ctx context.Context, countryIso2 string) ([]GetBranchesByCountryISO2Row, error) {
+	rows, err := q.query(ctx, q.getBranchesByCountryISO2Stmt, getBranchesByCountryISO2, countryIso2)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Bank
+	var items []GetBranchesByCountryISO2Row
 	for rows.Next() {
-		var i Bank
+		var i GetBranchesByCountryISO2Row
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
@@ -126,6 +133,7 @@ func (q *Queries) GetBranchesByCountryISO2(ctx context.Context, arg GetBranchesB
 			&i.IsHeadquarter,
 			&i.SwiftCode,
 			&i.CountryIso2,
+			&i.CountryName,
 		); err != nil {
 			return nil, err
 		}
@@ -141,24 +149,31 @@ func (q *Queries) GetBranchesByCountryISO2(ctx context.Context, arg GetBranchesB
 }
 
 const getBranchesBySwiftCode = `-- name: GetBranchesBySwiftCode :many
-SELECT id, name, address, is_headquarter, swift_code, country_iso2 from bank
-WHERE LEFT(bank.swift_code, 8) = LEFT(?, 8) LIMIT ?
+SELECT bank.id, bank.name, bank.address, bank.is_headquarter, bank.swift_code, bank.country_iso2, country.name FROM bank
+INNER JOIN country
+ON bank.` + "`" + `country_ISO2` + "`" + ` = country.` + "`" + `ISO2` + "`" + `
+WHERE LEFT(bank.swift_code, 8) = LEFT(?, 8)
 `
 
-type GetBranchesBySwiftCodeParams struct {
-	LEFT  string `json:"LEFT"`
-	Limit int32  `json:"limit"`
+type GetBranchesBySwiftCodeRow struct {
+	ID            int32          `json:"id"`
+	Name          string         `json:"name"`
+	Address       sql.NullString `json:"address"`
+	IsHeadquarter bool           `json:"is_headquarter"`
+	SwiftCode     string         `json:"swift_code"`
+	CountryIso2   string         `json:"country_iso2"`
+	Name_2        string         `json:"name_2"`
 }
 
-func (q *Queries) GetBranchesBySwiftCode(ctx context.Context, arg GetBranchesBySwiftCodeParams) ([]Bank, error) {
-	rows, err := q.query(ctx, q.getBranchesBySwiftCodeStmt, getBranchesBySwiftCode, arg.LEFT, arg.Limit)
+func (q *Queries) GetBranchesBySwiftCode(ctx context.Context, swiftcode string) ([]GetBranchesBySwiftCodeRow, error) {
+	rows, err := q.query(ctx, q.getBranchesBySwiftCodeStmt, getBranchesBySwiftCode, swiftcode)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Bank
+	var items []GetBranchesBySwiftCodeRow
 	for rows.Next() {
-		var i Bank
+		var i GetBranchesBySwiftCodeRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
@@ -166,6 +181,7 @@ func (q *Queries) GetBranchesBySwiftCode(ctx context.Context, arg GetBranchesByS
 			&i.IsHeadquarter,
 			&i.SwiftCode,
 			&i.CountryIso2,
+			&i.Name_2,
 		); err != nil {
 			return nil, err
 		}

@@ -26,3 +26,7 @@ func IsHeadquarter(swiftCode string) (bool, error) {
 	}
 	return strings.HasSuffix(swiftCode, "XXX"), nil
 }
+
+func IsValidISO2Code(iso2code string) bool {
+	return len(iso2code) == 2
+}
