@@ -69,6 +69,9 @@ type Record struct {
 
 // FromArr constructs a Record from an array of strings representing its fields
 func (r *Record) FromArr(recordArr []string) error {
+	if r == nil {
+		return fmt.Errorf("nil record pointer")
+	}
 	if len(recordArr) != 8 {
 		return fmt.Errorf("invalid record length %d", len(recordArr))
 	}
@@ -76,11 +79,10 @@ func (r *Record) FromArr(recordArr []string) error {
 	r.SwiftCode = recordArr[1]
 	r.CodeType = recordArr[2]
 	r.Name = recordArr[3]
-	r.Name = recordArr[4]
-	r.Address = recordArr[5]
-	r.TownName = recordArr[6]
-	r.CountryName = recordArr[7]
-	r.TimeZone = recordArr[8]
+	r.Address = recordArr[4]
+	r.TownName = recordArr[5]
+	r.CountryName = recordArr[6]
+	r.TimeZone = recordArr[7]
 	return nil
 }
 
@@ -94,7 +96,7 @@ type SwiftParser struct {
 	params SwiftParserParams
 }
 
-func (sp SwiftParser) parseCsvData(filePath string) error {
+func (sp *SwiftParser) parseCsvData(filePath string) error {
 	var err error
 	f, err := os.Open(filePath)
 	if err != nil {
@@ -111,7 +113,7 @@ func (sp SwiftParser) parseCsvData(filePath string) error {
 	var argsArr processBulkArgs
 	var bankArgs sqlc.CreateBankBulkParams
 	var countryArgs sqlc.CreateCountryBulkParams
-	var record *Record
+	var record *Record = &Record{}
 	for {
 		slog.Debug(fmt.Sprintf("Processing record %d", i))
 		i = i + 1
@@ -141,7 +143,7 @@ func (sp SwiftParser) parseCsvData(filePath string) error {
 	return err
 }
 
-func (sp SwiftParser) parseXlsxData(filePath string) error {
+func (sp *SwiftParser) parseXlsxData(filePath string) error {
 	f, err := xlsx.OpenFile(filePath)
 	if err != nil {
 		return err
@@ -157,7 +159,7 @@ func (sp SwiftParser) parseXlsxData(filePath string) error {
 	var argsArr processBulkArgs
 	var bankArgs sqlc.CreateBankBulkParams
 	var countryArgs sqlc.CreateCountryBulkParams
-	var record *Record
+	var record *Record = &Record{}
 
 	err = sheet.ForEachRow(func(row *xlsx.Row) error {
 		if row != nil {
@@ -209,7 +211,7 @@ func (sp SwiftParser) parseXlsxData(filePath string) error {
 }
 
 // processBatch inserts bulk SWIFT data into a MySQL database.
-func (sp SwiftParser) processBatch(argsArr processBulkArgs) error {
+func (sp *SwiftParser) processBatch(argsArr processBulkArgs) error {
 	slog.Info(fmt.Sprintf("Processing batch (n=%d)", len(argsArr.bankBulkArgs)))
 	if sp.params.skipDuplicates {
 		slog.Debug("Ignoring duplicate bank entries")
@@ -250,7 +252,7 @@ func (sp SwiftParser) processBatch(argsArr processBulkArgs) error {
 
 // Parse loads SWIFT data into a database by calling a method matching given file extension.
 // Spreadsheet file should have 8 columns representing Record fields and a header.
-func (sp SwiftParser) Parse(filePath string) error {
+func (sp *SwiftParser) Parse(filePath string) error {
 	if len(filePath) == 0 {
 		return errors.New("empty filename")
 	}
@@ -271,7 +273,7 @@ func (sp SwiftParser) Parse(filePath string) error {
 }
 
 // processRecord converts a Record to args for insertion into a database.
-func (sp SwiftParser) processRecord(record *Record) (sqlc.CreateBankBulkParams, sqlc.CreateCountryBulkParams, error) {
+func (sp *SwiftParser) processRecord(record *Record) (sqlc.CreateBankBulkParams, sqlc.CreateCountryBulkParams, error) {
 	CountryISO2 := strings.ToUpper(strings.TrimSpace(record.CountryIso2))
 	SwiftCode := strings.TrimSpace(record.SwiftCode)
 	BankName := strings.TrimSpace(record.Name)

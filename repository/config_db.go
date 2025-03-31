@@ -1,7 +1,4 @@
-//
 // Repository implements SWIFT database and routines for interacting with it.
-//
-
 package repository
 
 import (
