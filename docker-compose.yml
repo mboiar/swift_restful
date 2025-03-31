@@ -1,21 +1,25 @@
-version: '3'
 services:
   db:
-    image: mysql/mysql-server:8
+    image: mysql
+    restart: always
     ports:
       - "3306:3306"
-    environment:
-      - "MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}"
-      - "MYSQL_USER=${DB_USER}"
-      - "MYSQL_PASSWORD=${DB_PASSWORD}"
-      - "MYSQL_DATABASE=${DB_NAME}"   
+    env_file: ".env"  
+    networks:
+      - backend
   web:
+    env_file: ".env"
     build: .
     ports:
       - "8000:8000"
-    volumes:
-      - ".:/routes"
     depends_on:
       - db
     links:
       - "db:repository"
+    restart: always
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge

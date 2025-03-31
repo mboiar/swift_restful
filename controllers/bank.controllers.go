@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"net/http"
 	repository "swift-restful/repository/sqlc"
 	"swift-restful/schemas"
@@ -24,7 +25,7 @@ func (sc *SwiftController) CreateBank(ctx *gin.Context) {
 	var payload *schemas.CreateSwiftEntry
 
 	if err := ctx.ShouldBindJSON(&payload); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "Invalid payload", "error": err.Error()})
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "invalid payload", "error": err.Error()})
 		return
 	}
 	countryArgs := &repository.CreateCountryParams{
@@ -39,33 +40,33 @@ func (sc *SwiftController) CreateBank(ctx *gin.Context) {
 	}
 	_, err := sc.q.CreateCountry(ctx, *countryArgs)
 	if err != nil {
-		ctx.JSON(http.StatusBadGateway, gin.H{"status": "Failed retrieving bank", "error": err.Error()})
+		ctx.JSON(http.StatusBadGateway, gin.H{"message": "failed retrieving SWIFT data", "error": err.Error()})
 		return
 	}
 	_, err = sc.q.CreateBank(ctx, *bankArgs)
 	if err != nil {
-		ctx.JSON(http.StatusBadGateway, gin.H{"status": "Failed retrieving bank", "error": err.Error()})
+		ctx.JSON(http.StatusBadGateway, gin.H{"message": "failed retrieving SWIFT data", "error": err.Error()})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "Successfully created SWIFT entry"})
+	ctx.JSON(http.StatusOK, gin.H{"message": "successfully created SWIFT entry"})
 }
 
 func (sc *SwiftController) GetSwiftData(ctx *gin.Context) {
 	swiftCode := ctx.Param("swift-code")
 	isBankHeadquarter, err := utils.IsHeadquarter(swiftCode)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "failed", "message": "Invalid SWIFT code format"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "invalid SWIFT code format"})
 		return
 	}
 	if isBankHeadquarter {
 		branches, err := sc.q.GetBranchesBySwiftCode(ctx, swiftCode)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				ctx.JSON(http.StatusNotFound, gin.H{"status": "failed", "message": "Failed to retrieve SWIFT data for this SWIFT code"})
+				ctx.JSON(http.StatusNotFound, gin.H{"message": "failed to retrieve SWIFT data for SWIFT code"})
 				return
 			}
-			ctx.JSON(http.StatusBadGateway, gin.H{"status": "Failed retireving SWIFT data", "error": err.Error()})
+			ctx.JSON(http.StatusBadGateway, gin.H{"message": "failed retireving SWIFT data", "error": err.Error()})
 			return
 		}
 		var headquarter *schemas.GetHeadquarterEntry
@@ -73,7 +74,7 @@ func (sc *SwiftController) GetSwiftData(ctx *gin.Context) {
 		for _, bank := range branches {
 			if bank.IsHeadquarter {
 				headquarter = &schemas.GetHeadquarterEntry{
-					Address:       bank.Address,
+					Address:       bank.Address.String,
 					BankName:      bank.Name,
 					CountryIso2:   bank.CountryIso2,
 					CountryName:   bank.Name_2,
@@ -82,13 +83,18 @@ func (sc *SwiftController) GetSwiftData(ctx *gin.Context) {
 				}
 			} else {
 				branchEntries = append(branchEntries, schemas.GetBranchEntry{
-					Address:       bank.Address,
+					Address:       bank.Address.String,
 					BankName:      bank.Name,
 					CountryIso2:   bank.CountryIso2,
 					IsHeadquarter: bank.IsHeadquarter,
 					SwiftCode:     bank.SwiftCode,
 				})
 			}
+		}
+		fmt.Printf("%v", branches)
+		if headquarter == nil {
+			ctx.JSON(http.StatusNotFound, gin.H{"message": "failed to retrieve SWIFT data for SWIFT code"})
+			return
 		}
 		headquarter.Branches = branchEntries
 		ctx.JSON(http.StatusOK, headquarter)
@@ -97,14 +103,14 @@ func (sc *SwiftController) GetSwiftData(ctx *gin.Context) {
 		branch, err := sc.q.GetBankBySwiftCode(ctx, swiftCode)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				ctx.JSON(http.StatusNotFound, gin.H{"status": "failed", "message": "Failed to retrieve SWIFT data for this SWIFT code"})
+				ctx.JSON(http.StatusNotFound, gin.H{"message": "failed to retrieve SWIFT data for SWIFT code"})
 				return
 			}
-			ctx.JSON(http.StatusBadGateway, gin.H{"status": "Failed retireving SWIFT data", "error": err.Error()})
+			ctx.JSON(http.StatusBadGateway, gin.H{"message": "failed retireving SWIFT data", "error": err.Error()})
 			return
 		}
 		ctx.JSON(http.StatusOK, gin.H{
-			"address":       branch.Address,
+			"address":       branch.Address.String,
 			"bankName":      branch.Name,
 			"countryISO2":   branch.CountryIso2,
 			"countryName":   branch.Name_2,
@@ -118,24 +124,28 @@ func (sc *SwiftController) GetSwiftData(ctx *gin.Context) {
 func (sc *SwiftController) GetCountryData(ctx *gin.Context) {
 	iso2Code := ctx.Param("countryISO2code")
 	if !utils.IsValidISO2Code(iso2Code) {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "failed", "message": "Invalid country ISO2 code format"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "invalid country ISO2 code format"})
 		return
 	}
 
 	branches, err := sc.q.GetBranchesByCountryISO2(ctx, iso2Code)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			ctx.JSON(http.StatusNotFound, gin.H{"status": "failed", "message": "Failed to retrieve SWIFT data for ISO2 code"})
+			ctx.JSON(http.StatusNotFound, gin.H{"message": "failed to retrieve SWIFT data for ISO2 code"})
 			return
 		}
-		ctx.JSON(http.StatusBadGateway, gin.H{"status": "Failed retireving SWIFT data", "error": err.Error()})
+		ctx.JSON(http.StatusBadGateway, gin.H{"message": "failed retireving SWIFT data", "error": err.Error()})
 		return
 	}
 	var branchEntries []schemas.GetBranchEntry
+	if len(branches) == 0 {
+		ctx.JSON(http.StatusNotFound, gin.H{"message": fmt.Sprintf("no entries for code %s", iso2Code)})
+		return
+	}
 	countryName := branches[0].CountryName
 	for _, bank := range branches {
 		branchEntries = append(branchEntries, schemas.GetBranchEntry{
-			Address:       bank.Address,
+			Address:       bank.Address.String,
 			BankName:      bank.Name,
 			CountryIso2:   bank.CountryIso2,
 			IsHeadquarter: bank.IsHeadquarter,
@@ -147,28 +157,27 @@ func (sc *SwiftController) GetCountryData(ctx *gin.Context) {
 		"countryName": countryName,
 		"swiftCodes":  branchEntries,
 	})
-	return
 }
 
 func (sc *SwiftController) DeleteBankBySwiftCode(ctx *gin.Context) {
 	swiftCode := ctx.Param("swift-code")
 	isSwiftCode := utils.IsValidSwiftCode(swiftCode)
 	if !isSwiftCode {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "failed", "message": "Invalid SWIFT code format"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "invalid SWIFT code format"})
 		return
 	}
 	_, err := sc.q.GetBankBySwiftCode(ctx, swiftCode)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			ctx.JSON(http.StatusNotFound, gin.H{"status": "failed", "message": "Failed to retrieve SWIFT data for given SWIFT code"})
+			ctx.JSON(http.StatusNotFound, gin.H{"message": "failed to retrieve SWIFT data for given SWIFT code"})
 			return
 		}
-		ctx.JSON(http.StatusBadGateway, gin.H{"status": "Failed retireving SWIFT data", "error": err.Error()})
+		ctx.JSON(http.StatusBadGateway, gin.H{"message": "failed retireving SWIFT data", "error": err.Error()})
 		return
 	}
 	err = sc.q.DeleteBank(ctx, swiftCode)
 	if err != nil {
-		ctx.JSON(http.StatusBadGateway, gin.H{"status": "failed", "error": err.Error()})
+		ctx.JSON(http.StatusBadGateway, gin.H{"message": "failed deleting SWIFT entry", "error": err.Error()})
 		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{

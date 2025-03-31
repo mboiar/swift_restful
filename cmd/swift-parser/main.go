@@ -333,7 +333,7 @@ func main() {
 	}
 	slog.SetLogLoggerLevel(logLevel)
 
-	db, queries, err := repository.SetupDB(dbConfigPath)
+	db, queries, err := repository.SetupDB(&dbConfigPath)
 	if err != nil {
 		log.Fatal("Cannot setup DB: ", err)
 	}
