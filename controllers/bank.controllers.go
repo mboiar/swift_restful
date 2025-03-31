@@ -91,7 +91,6 @@ func (sc *SwiftController) GetSwiftData(ctx *gin.Context) {
 				})
 			}
 		}
-		fmt.Printf("%v", branches)
 		if headquarter == nil {
 			ctx.JSON(http.StatusNotFound, gin.H{"message": "failed to retrieve SWIFT data for SWIFT code"})
 			return
@@ -114,7 +113,7 @@ func (sc *SwiftController) GetSwiftData(ctx *gin.Context) {
 			"bankName":      branch.Name,
 			"countryISO2":   branch.CountryIso2,
 			"countryName":   branch.Name_2,
-			"ssHeadquarter": branch.IsHeadquarter,
+			"isHeadquarter": branch.IsHeadquarter,
 			"swiftCode":     branch.SwiftCode,
 		})
 		return

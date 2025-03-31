@@ -44,7 +44,6 @@ func init() {
 
 func main() {
 
-	slog.Info(fmt.Sprintf("WTFFF %v", server))
 	router := server.Group("/")
 	router.GET("/healthcheck", func(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, gin.H{"message": "API is working"})
