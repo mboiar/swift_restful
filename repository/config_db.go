@@ -1,30 +1,55 @@
+// Repository implements SWIFT database and routines for interacting with it.
 package repository
 
 import (
 	"database/sql"
 	"fmt"
+	"log"
+	"log/slog"
 	"os"
 
 	repository "swift-restful/repository/sqlc"
 
 	"github.com/go-sql-driver/mysql"
+	"github.com/joho/godotenv"
 )
 
-func SetupDB() (*repository.Queries, error) {
+// SetupDB returns database and sqlc Queries instance configured based on provided .env file.
+// If provided, configuration file should define DB_USER, DB_PASSWORD, DB_NAME, DB_HOST and DB_PORT environment variables.
+func SetupDB(dbcfg_path string) (*sql.DB, *repository.Queries, error) {
+	if dbcfg_path != "" {
+		err := godotenv.Load(dbcfg_path)
+		if err != nil {
+			slog.Error("error loading config " + dbcfg_path)
+			return nil, nil, err
+		}
+	}
+	user := os.Getenv("DB_USER")
+	passwd := os.Getenv("DB_PASSWORD")
+	host := os.Getenv("DB_HOST")
+	port := os.Getenv("DB_PORT")
+	addr := host + ":" + port
+	dbname := os.Getenv("DB_NAME")
+	if dbname == "" || host == "" || port == "" {
+		return nil, nil, fmt.Errorf("DB_NAME (%s), DB_HOST (%s) and DB_PORT (%s) can not be empty: make sure appropriate environment variables are set", dbname, host, port)
+	}
 	cfg := mysql.Config{
-		User:   os.Getenv("DB_USER"),
-		Passwd: os.Getenv("DB_PASSWORD"),
+		User:   user,
+		Passwd: passwd,
 		Net:    "tcp",
-		Addr:   os.Getenv("DB_HOST") + ":" + os.Getenv("DB_PORT"),
-		DBName: os.Getenv("DB_NAME"),
+		Addr:   addr,
+		DBName: dbname,
 	}
 
-	conn, err := sql.Open("mysql", cfg.FormatDSN())
+	db, err := sql.Open("mysql", cfg.FormatDSN())
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	db := repository.New(conn)
+	if err := db.Ping(); err != nil {
+		return nil, nil, err
+	}
+	queries := repository.New(db)
 
-	fmt.Println("Connected!")
-	return db, nil
+	log.Println("Connected to database", cfg.DBName)
+	return db, queries, nil
 }

@@ -2,9 +2,9 @@ name: Test in Docker
 
 on:
   push:
-    branches: [ "main" ]
+    []
   pull_request:
-    branches: [ "main" ]
+    []
 
 jobs:
 
@@ -16,6 +16,9 @@ jobs:
     - uses: docker/setup-buildx-action@v3
 
     - name: Build Docker Image
+      env:
+        TESTCONTAINERS_RYUK_DISABLED: true
+        TESTCONTAINERS_HOST_OVERRIDE: localhost
       run: |
         docker build -t swift-restful-test .
 

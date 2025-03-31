@@ -14,9 +14,7 @@ const createCountry = `-- name: CreateCountry :execresult
 INSERT IGNORE INTO country(
     ` + "`" + `ISO2` + "`" + `,
     name
-) VALUES (
-    ?, ?
-)
+) VALUES (?, ?)
 `
 
 type CreateCountryParams struct {
@@ -26,6 +24,20 @@ type CreateCountryParams struct {
 
 func (q *Queries) CreateCountry(ctx context.Context, arg CreateCountryParams) (sql.Result, error) {
 	return q.exec(ctx, q.createCountryStmt, createCountry, arg.Iso2, arg.Name)
+}
+
+const createCountryBulk = `-- name: CreateCountryBulk :copyfrom
+INSERT IGNORE INTO country(
+    ` + "`" + `ISO2` + "`" + `,
+    name
+) VALUES (
+    ?, ?
+)
+`
+
+type CreateCountryBulkParams struct {
+	Iso2 string `json:"iso2"`
+	Name string `json:"name"`
 }
 
 const getCountryByCountryISO2 = `-- name: GetCountryByCountryISO2 :one
