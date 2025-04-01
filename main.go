@@ -54,12 +54,12 @@ func main() {
 	})
 
 	srv := &http.Server{
-		Addr:    ":8000",
+		Addr:    ":8080",
 		Handler: server.Handler(),
 	}
 
 	go func() {
-		slog.Info("Starting server on :8000")
+		slog.Info("Starting server on :8080")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server failed: %s\n", err)
 		}

@@ -44,7 +44,7 @@ func (sc *SwiftController) CreateBank(ctx *gin.Context) {
 		Name: strings.ToUpper(payload.CountryName),
 	}
 	bankArgs := &repository.CreateBankParams{
-		Address:       payload.Address,
+		Address:       sql.NullString{String: payload.Address, Valid: payload.Address != ""},
 		Name:          strings.ToUpper(payload.BankName),
 		CountryIso2:   strings.ToUpper(payload.CountryIso2),
 		IsHeadquarter: *payload.IsHeadquarter,

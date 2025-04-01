@@ -7,16 +7,35 @@ services:
     env_file: ".env"  
     networks:
       - backend
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uuser", "-puser_password"]
+      interval: 5s
+      retries: 5
   web:
     env_file: ".env"
     build: .
     ports:
-      - "8000:8000"
+      - "8080:8080"
     depends_on:
-      - db
+      migrate:
+        condition: service_completed_successfully
     links:
       - "db:repository"
     restart: always
+    networks:
+      - backend
+  migrate:
+    image: migrate/migrate
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./repository/migration:/migrations
+    command: [
+      "-path", "/migrations",
+      "-database", "mysql://user:password@tcp(db:3306)/swift_db",
+      "up"
+    ]
     networks:
       - backend
 
