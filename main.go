@@ -30,6 +30,9 @@ var (
 
 func init() {
 	ctx = context.TODO()
+}
+
+func main() {
 	var err error
 	_, q, err = repository.SetupDB(nil)
 	if err != nil {
@@ -40,10 +43,6 @@ func init() {
 
 	server = gin.Default()
 	server.SetTrustedProxies(nil)
-}
-
-func main() {
-
 	router := server.Group("/")
 	router.GET("/healthcheck", func(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, gin.H{"message": "API is working"})

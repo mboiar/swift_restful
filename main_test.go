@@ -69,23 +69,6 @@ func createTestDB() (*sql.DB, *repository.Queries, func(), error) {
 	return db, queries, cleanup, nil
 }
 
-func resetTestDB(db *sql.DB) error {
-	_, err := db.Exec(`TRUNCATE TABLE bank`)
-	if err != nil {
-		return err
-	}
-	_, err = db.Exec(`SET FOREIGN_KEY_CHECKS = 0`)
-	if err != nil {
-		return err
-	}
-	_, err = db.Exec(`TRUNCATE TABLE country`)
-	if err != nil {
-		return err
-	}
-	_, err = db.Exec(`SET FOREIGN_KEY_CHECKS = 1`)
-	return err
-}
-
 func TestGetSwiftDataBySwiftCode(t *testing.T) {
 	ctx = context.TODO()
 	_, q, cleanup, err := createTestDB()
