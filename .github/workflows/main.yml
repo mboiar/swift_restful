@@ -16,6 +16,8 @@ jobs:
     - name: Get dependencies
       run: go mod download
 
+    - name: Load env variables
+      run: source ./.env
     - name: Run tests
       run: |
         go test ./... -v
