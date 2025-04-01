@@ -16,9 +16,9 @@ import (
 
 // SetupDB returns database and sqlc Queries instance configured based on provided .env file.
 // If provided, configuration file should define DB_USER, DB_PASSWORD, DB_NAME, DB_HOST and DB_PORT environment variables.
-func SetupDB(dbcfg_path string) (*sql.DB, *repository.Queries, error) {
-	if dbcfg_path != "" {
-		err := godotenv.Load(dbcfg_path)
+func SetupDB(dbcfg_path *string) (*sql.DB, *repository.Queries, error) {
+	if dbcfg_path != nil && *dbcfg_path != "" {
+		err := godotenv.Load(*dbcfg_path)
 		if err != nil {
 			slog.Error("error loading config " + dbcfg_path)
 			return nil, nil, err
