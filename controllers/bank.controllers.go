@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"strings"
 	repository "swift-restful/repository/sqlc"
 	"swift-restful/schemas"
 	"swift-restful/utils"
@@ -27,25 +28,36 @@ func (sc *SwiftController) CreateBank(ctx *gin.Context) {
 	if err := ctx.ShouldBindJSON(&payload); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": "invalid payload", "error": err.Error()})
 		return
+	} else if !utils.IsValidISO2Code(payload.CountryIso2) || !utils.IsValidSwiftCode(payload.SwiftCode) {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "invalid payload: invalid code format"})
+		return
+	}
+
+	// swiftCode suffix and IsHeadquarter should be consistent
+	ih, _ := utils.IsHeadquarter(payload.SwiftCode)
+	if (payload.IsHeadquarter != nil && ih != *payload.IsHeadquarter) || (payload.IsHeadquarter == nil && ih) {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "invalid payload: inconsistent headquarter info"})
+		return
 	}
 	countryArgs := &repository.CreateCountryParams{
-		Iso2: payload.CountryIso2,
-		Name: payload.CountryName,
+		Iso2: strings.ToUpper(payload.CountryIso2),
+		Name: strings.ToUpper(payload.CountryName),
 	}
 	bankArgs := &repository.CreateBankParams{
-		Address:     payload.Address,
-		Name:        payload.BankName,
-		CountryIso2: payload.CountryIso2,
-		SwiftCode:   payload.SwiftCode,
+		Address:       payload.Address,
+		Name:          strings.ToUpper(payload.BankName),
+		CountryIso2:   strings.ToUpper(payload.CountryIso2),
+		IsHeadquarter: *payload.IsHeadquarter,
+		SwiftCode:     strings.ToUpper(payload.SwiftCode),
 	}
 	_, err := sc.q.CreateCountry(ctx, *countryArgs)
 	if err != nil {
-		ctx.JSON(http.StatusBadGateway, gin.H{"message": "failed retrieving SWIFT data", "error": err.Error()})
+		ctx.JSON(http.StatusBadGateway, gin.H{"message": "failed inserting SWIFT data", "error": err.Error()})
 		return
 	}
 	_, err = sc.q.CreateBank(ctx, *bankArgs)
 	if err != nil {
-		ctx.JSON(http.StatusBadGateway, gin.H{"message": "failed retrieving SWIFT data", "error": err.Error()})
+		ctx.JSON(http.StatusBadGateway, gin.H{"message": "failed inserting SWIFT data", "error": err.Error()})
 		return
 	}
 
@@ -142,6 +154,7 @@ func (sc *SwiftController) GetCountryData(ctx *gin.Context) {
 		return
 	}
 	countryName := branches[0].CountryName
+	countryISO2Code := branches[0].CountryIso2
 	for _, bank := range branches {
 		branchEntries = append(branchEntries, schemas.GetBranchEntry{
 			Address:       bank.Address.String,
@@ -152,7 +165,7 @@ func (sc *SwiftController) GetCountryData(ctx *gin.Context) {
 		})
 	}
 	ctx.JSON(http.StatusOK, gin.H{
-		"countryISO2": iso2Code,
+		"countryISO2": countryISO2Code,
 		"countryName": countryName,
 		"swiftCodes":  branchEntries,
 	})

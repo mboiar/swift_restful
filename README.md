@@ -22,10 +22,9 @@ git clone https://github.com/mboiar/swift-restful.git
 cd swift-restful
 ```
 
-### 4️⃣ Run the Application with Docker
+### 4️⃣ Run the Application with Docker-compose
 ```sh
-docker build -t swift-restful .
-docker run -p 8000:8000 swift-restful
+docker-compose up --build
 ```
 This will build and start the API along with a MySQL database container.
 
@@ -39,7 +38,8 @@ This will build and start the API along with a MySQL database container.
 | DELETE | `/v1/swift-codes/:swift-code`              | Delete bank by SWIFT code            |
 
 ## 🧪 Running Tests
-To run unit tests:
+
+To run unit and integration tests:
 ```sh
 go test ./... -v
 ```

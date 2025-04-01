@@ -289,6 +289,9 @@ func (sp *SwiftParser) processRecord(record *Record) (sqlc.CreateBankBulkParams,
 	if err != nil {
 		return bankArgs, countryArgs, fmt.Errorf("cannot process record: %v", err)
 	}
+	if !utils.IsValidISO2Code(countryISO2) {
+		return bankArgs, countryArgs, fmt.Errorf("cannot process record: %v", err)
+	}
 
 	bankArgs = sqlc.CreateBankBulkParams{
 		Address:       address,
