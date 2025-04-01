@@ -18,11 +18,12 @@ import (
 var readerHandlerSequenceForCreateBankBulk uint32 = 1
 
 func convertRowsForCreateBankBulk(w *io.PipeWriter, arg []CreateBankBulkParams) {
-	e := mysqltsv.NewEncoder(w, 4, nil)
+	e := mysqltsv.NewEncoder(w, 5, nil)
 	for _, row := range arg {
 		e.AppendValue(row.Address)
 		e.AppendString(row.Name)
 		e.AppendString(row.CountryIso2)
+		e.AppendValue(row.IsHeadquarter)
 		e.AppendString(row.SwiftCode)
 	}
 	w.CloseWithError(e.Close())
@@ -45,7 +46,7 @@ func (q *Queries) CreateBankBulk(ctx context.Context, arg []CreateBankBulkParams
 	go convertRowsForCreateBankBulk(pw, arg)
 	// The string interpolation is necessary because LOAD DATA INFILE requires
 	// the file name to be given as a literal string.
-	result, err := q.db.ExecContext(ctx, fmt.Sprintf("LOAD DATA LOCAL INFILE '%s' INTO TABLE `bank` %s (address, name, country_iso2, swift_code)", "Reader::"+rh, mysqltsv.Escaping))
+	result, err := q.db.ExecContext(ctx, fmt.Sprintf("LOAD DATA LOCAL INFILE '%s' INTO TABLE `bank` %s (address, name, country_iso2, is_headquarter, swift_code)", "Reader::"+rh, mysqltsv.Escaping))
 	if err != nil {
 		return 0, err
 	}

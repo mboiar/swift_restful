@@ -9,6 +9,6 @@ RUN go mod download
 COPY . $GOPATH/src/github.com/mboiar/swift-restful/
 RUN go build -o main main.go
 
-EXPOSE 8000
+EXPOSE 8080
 
 CMD ["./main"]
