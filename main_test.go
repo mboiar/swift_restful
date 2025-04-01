@@ -215,7 +215,7 @@ func TestAddSwiftData(t *testing.T) {
 	tval := true
 	fval := false
 	testBankValid, _ := json.Marshal(schemas.CreateSwiftEntry{
-		Address:       sql.NullString{String: "Address", Valid: true},
+		Address:       "Address",
 		BankName:      "Bank",
 		CountryIso2:   "UA",
 		CountryName:   "Ukraine",
@@ -223,7 +223,7 @@ func TestAddSwiftData(t *testing.T) {
 		IsHeadquarter: &tval,
 	})
 	testBankInconsistent, _ := json.Marshal(schemas.CreateSwiftEntry{
-		Address:       sql.NullString{String: "Address", Valid: true},
+		Address:       "Address",
 		BankName:      "Bank",
 		CountryIso2:   "UA",
 		CountryName:   "Ukraine",
@@ -231,7 +231,7 @@ func TestAddSwiftData(t *testing.T) {
 		IsHeadquarter: &fval,
 	})
 	testBankInvalidIso2, _ := json.Marshal(schemas.CreateSwiftEntry{
-		Address:       sql.NullString{String: "Address", Valid: true},
+		Address:       "Address",
 		BankName:      "Bank",
 		CountryIso2:   "UAA",
 		CountryName:   "Ukraine",
@@ -239,7 +239,7 @@ func TestAddSwiftData(t *testing.T) {
 		IsHeadquarter: &tval,
 	})
 	testBankInvalidSwiftCode, _ := json.Marshal(schemas.CreateSwiftEntry{
-		Address:       sql.NullString{String: "Address", Valid: true},
+		Address:       "Address",
 		BankName:      "Bank",
 		CountryIso2:   "UA",
 		CountryName:   "Ukraine",
@@ -247,7 +247,7 @@ func TestAddSwiftData(t *testing.T) {
 		IsHeadquarter: &tval,
 	})
 	testBankEmptyAddress, _ := json.Marshal(schemas.CreateSwiftEntry{
-		Address:       sql.NullString{String: "", Valid: false},
+		Address:       "Address",
 		BankName:      "Bank",
 		CountryIso2:   "UA",
 		CountryName:   "Ukraine",
