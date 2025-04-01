@@ -1,6 +1,6 @@
 /*
 Swift-parser transfers SWIFT data from a spreadsheet file to a MySQL database.
-It uses bulk insertion for fast uploads.
+It uses buffer reads for large input files and bulk insertion for fast uploads.
 
 Required flag -f specifies spreadsheet file. CSV and XLSX spreadsheet formats are supported.
 
@@ -44,15 +44,16 @@ import (
 
 	"swift-restful/repository"
 	sqlc "swift-restful/repository/sqlc"
+	"swift-restful/utils"
 )
 
 // SwiftParserParams represents SwiftParser parameters
 type SwiftParserParams struct {
-	db             *sql.DB
-	queries        *sqlc.Queries
-	skipDuplicates bool
-	loadDataLocal  bool
-	batchSize      uint
+	db             *sql.DB       // database
+	queries        *sqlc.Queries // database queries
+	skipDuplicates bool          // Ignore duplicate SWIFT entries
+	loadDataLocal  bool          // Use LOAD DATA LOCAL instruction for very fast inserts
+	batchSize      uint          // Bulk database insert batch size
 }
 
 // A Record represents values of a single SWIFT spreadsheet row
@@ -274,23 +275,33 @@ func (sp *SwiftParser) Parse(filePath string) error {
 
 // processRecord converts a Record to args for insertion into a database.
 func (sp *SwiftParser) processRecord(record *Record) (sqlc.CreateBankBulkParams, sqlc.CreateCountryBulkParams, error) {
-	CountryISO2 := strings.ToUpper(strings.TrimSpace(record.CountryIso2))
-	SwiftCode := strings.TrimSpace(record.SwiftCode)
-	BankName := strings.TrimSpace(record.Name)
+	bankArgs := sqlc.CreateBankBulkParams{}
+	countryArgs := sqlc.CreateCountryBulkParams{}
+	countryISO2 := strings.ToUpper(strings.TrimSpace(record.CountryIso2))
+	swiftCode := strings.TrimSpace(record.SwiftCode)
+	bankName := strings.TrimSpace(record.Name)
 	addressStr := strings.TrimSpace(record.Address)
-	Address := sql.NullString{
+	address := sql.NullString{
 		String: addressStr,
 		Valid:  len(addressStr) > 0}
-	CountryName := strings.ToUpper(strings.TrimSpace(record.CountryName))
+	countryName := strings.ToUpper(strings.TrimSpace(record.CountryName))
+	isBankHeadquarter, err := utils.IsHeadquarter(swiftCode)
+	if err != nil {
+		return bankArgs, countryArgs, fmt.Errorf("cannot process record: %v", err)
+	}
+	if !utils.IsValidISO2Code(countryISO2) {
+		return bankArgs, countryArgs, fmt.Errorf("cannot process record: %v", err)
+	}
 
-	bankArgs := sqlc.CreateBankBulkParams{
-		Address:     Address,
-		Name:        BankName,
-		CountryIso2: CountryISO2,
-		SwiftCode:   SwiftCode}
-	countryArgs := sqlc.CreateCountryBulkParams{
-		Iso2: CountryISO2,
-		Name: CountryName}
+	bankArgs = sqlc.CreateBankBulkParams{
+		Address:       address,
+		Name:          bankName,
+		CountryIso2:   countryISO2,
+		IsHeadquarter: isBankHeadquarter,
+		SwiftCode:     swiftCode}
+	countryArgs = sqlc.CreateCountryBulkParams{
+		Iso2: countryISO2,
+		Name: countryName}
 	return bankArgs, countryArgs, nil
 }
 
@@ -325,7 +336,7 @@ func main() {
 	}
 	slog.SetLogLoggerLevel(logLevel)
 
-	db, queries, err := repository.SetupDB(dbConfigPath)
+	db, queries, err := repository.SetupDB(&dbConfigPath)
 	if err != nil {
 		log.Fatal("Cannot setup DB: ", err)
 	}

@@ -24,5 +24,9 @@ func IsHeadquarter(swiftCode string) (bool, error) {
 	if !IsValidSwiftCode(swiftCode) {
 		return false, errors.New("Invalid swift code " + swiftCode)
 	}
-	return strings.HasSuffix(swiftCode, "XXX"), nil
+	return strings.HasSuffix(strings.ToLower(swiftCode), "xxx"), nil
+}
+
+func IsValidISO2Code(iso2code string) bool {
+	return len(iso2code) == 2
 }
