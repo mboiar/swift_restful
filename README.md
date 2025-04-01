@@ -1,3 +1,4 @@
+![Test](https://github.com/mboiar/swift_restful/actions/workflows/main.yml/badge.svg)
 # Swift-restful - RESTful API for SWIFT data handling
 
 ## 📌 Overview
